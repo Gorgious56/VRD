@@ -1,5 +1,6 @@
 import bpy
 from ..operators import object_generation
+from ..operators import object_destruction
 
 
 class VRDMainPanel(bpy.types.Panel):
@@ -12,6 +13,5 @@ class VRDMainPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        scene = context.scene
-        row = layout.row()
-        row.operator(object_generation.CreateManholeOperator.bl_idname)
+        layout.operator(object_generation.CreateManholeOperator.bl_idname)
+        layout.operator(object_destruction.RemoveObjectRecursivelyOperator.bl_idname)
