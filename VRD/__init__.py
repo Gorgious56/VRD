@@ -1,6 +1,7 @@
 import bpy
 from . import auto_load
 from .frontend.operators import object_generation
+from .frontend.operators import object_destruction
 from .frontend.ui import panels
 
 # This program is free software; you can redistribute it and/or modify
@@ -31,6 +32,8 @@ bl_info = {
 
 classes = (
     object_generation.CreateManholeOperator,
+
+    object_destruction.RemoveObjectRecursivelyOperator,
 
     panels.VRDMainPanel,
 )
