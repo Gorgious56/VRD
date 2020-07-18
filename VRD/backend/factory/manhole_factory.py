@@ -1,48 +1,71 @@
 import bpy
-from math import pi
+from math import pi, cos, sin
+from . import object_factory as obj_fac
 from . import primitive_factory as prim_fac
 from . import modifier_factory as mod_fac
 
 
-def create_manhole_bottom(settings) -> bpy.types.Mesh:
+def create_manhole_bottom_pipes(lod: int, radius: float, settings) -> bpy.types.Object:
+    outlet_radius = int(settings.outlet_diameter) / 2000
+
+    vertices = [(-2 * radius, 0, 0), (-radius, 0, 0), (0, 0, 0)]
+    skin_radii = [(outlet_radius, outlet_radius), (outlet_radius, outlet_radius), (outlet_radius, outlet_radius)]
+    edges = [(0, 1), (1, 2)]
+
+    for i in range(settings.inlets):
+        angle = getattr(settings, f"inlet_{i+1}_angle")
+        skin_radius = int(getattr(settings, f"inlet_{i+1}_diameter")) / 2000
+        vertices.extend((
+            (radius * cos(angle) * 1.01, radius * sin(angle) * 1.01, 0),
+            (2 * radius * cos(angle), 2 * radius * sin(angle), 0),
+        ))
+        skin_radii.extend(((skin_radius, skin_radius), (skin_radius, skin_radius)))
+        edges.extend(((2, i * 2 + 3), (i * 2 + 3, i * 2 + 4)))
+
+    pipes = obj_fac.ccreate_mesh_objectreate_object(
+        name="Manhole_Bottom_Bool_Pipes",
+        auto_smooth=True,
+        vertices=vertices,
+        edges=edges,
+        used_as_boolean=True,
+    )
+    mod_fac.add_modifier(pipes, mod_fac.ModSettings('WELD', "VRD_WELD"))
+    mod_fac.add_modifier(pipes, mod_fac.ModSettings('SKIN', "VRD_PIPE_DIAMETER", {"use_smooth_shade": True, "branch_smoothing": 1}))
+    for i, v in enumerate(pipes.data.skin_vertices[0].data):
+            v.radius = skin_radii[i]
+
+    mod_fac.add_modifier(pipes, mod_fac.ModSettings('SUBSURF', "VRD_SUBSURF", {"levels": settings.lod // 4, "render_levels": settings.lod // 4}))
+
+    return pipes
+
+
+def create_manhole_bottom(settings) -> bpy.types.Object:
+    radius = settings.radius
+    lod = settings.lod
     bot_height = 0.61
     bot_thickness = 0.1
     bot_bot_thickness = 0.25
 
     bot_obj_bool_main = prim_fac.create_cylinder(
-        radius=settings.radius - bot_thickness,
+        radius=radius - bot_thickness,
         height=bot_height,
-        lod=settings.lod,
+        lod=lod,
         name="Manhole_Bottom_Bool_Main",
         location=(0, 0, bot_bot_thickness),
         used_as_boolean=True)
+    
 
     bot_obj_bool_top = prim_fac.create_cylinder(
-        radius=settings.radius - bot_thickness / 2,
+        radius=radius - bot_thickness / 2,
         height=bot_height,
-        lod=settings.lod,
+        lod=lod,
         name="Manhole_Bottom_Bool_Top",
         location=(0, 0, bot_height - bot_thickness / 2),
         used_as_boolean=True)
 
-    intake_radius = int(settings.intake_diameter) / 2000
-    bot_obj_bool_intake = prim_fac.create_cylinder(
-        radius=intake_radius,
-        height=settings.radius * 2,
-        lod=settings.lod / 1.5,
-        name="Manhole_Bottom_Bool_Intake",
-        location=(0, 0, bot_bot_thickness),
-        rotation=(.001, - pi / 2, settings.intake_angle),
-        used_as_boolean=True)
-
-    bot_obj_bool_outlet = prim_fac.create_cylinder(
-        radius=intake_radius,
-        height=settings.radius * 2,
-        lod=settings.lod / 1.5,
-        name="Manhole_Bottom_Bool_Outlet",
-        location=(0, 0, bot_bot_thickness),
-        rotation=(.001, pi / 2, settings.outlet_angle),
-        used_as_boolean=True)
+    pipes = create_manhole_bottom_pipes(lod, radius, settings)    
+    pipes.location[2] += bot_bot_thickness
+    pipes.rotation_euler = (0.01, 0, 0)
 
     bot_obj = prim_fac.create_cylinder(
         radius=settings.radius,
@@ -63,11 +86,9 @@ def create_manhole_bottom(settings) -> bpy.types.Mesh:
             "width": 0.002,
             "segments": settings.lod // 4,
             "angle_limit": pi * 0.45,
-            # "use_clamp_overlap": False,
-            # "harden_normals": True
         }))
 
-    for boolean in (bot_obj_bool_intake, bot_obj_bool_outlet):
+    for boolean in (pipes,):
         boolean.parent = bot_obj
         mod_fac.add_modifier(bot_obj, mod_fac.ModSettings('BOOLEAN', 'VRD_BOOL_MAIN', {"object": boolean}))
 
