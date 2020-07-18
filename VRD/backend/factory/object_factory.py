@@ -1,7 +1,13 @@
 import bpy
 
 
-def create_object(name: str, auto_smooth: bool = True, vertices=None, edges=None, faces=None, used_as_boolean: bool = False) -> bpy.types.Object:
+def create_empty(name: str):
+    empty = bpy.data.objects.new( "empty", None )
+
+    return empty
+
+
+def create_mesh_object(name: str, auto_smooth: bool = True, vertices=None, edges=None, faces=None, used_as_boolean: bool = False) -> bpy.types.Object:
     mesh = bpy.data.meshes.new(name)
 
     if not vertices:
