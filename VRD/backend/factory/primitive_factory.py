@@ -9,7 +9,7 @@ from . import object_factory as obj_fac
 
 def create_cylinder(radius: float, height: float, lod: int, name: str, location=None, rotation=None, caps: bool = True, used_as_boolean: bool = False) -> bpy.types.Object:
     epsilon = 0.001
-    caps_obj_bot = obj_fac.create_object(name=name + "_Caps_Bot", auto_smooth=True, vertices=((0, 0, 0),), used_as_boolean=True)
+    caps_obj_bot = obj_fac.create_mesh_object(name=name + "_Caps_Bot", auto_smooth=True, vertices=((0, 0, 0),), used_as_boolean=True)
 
     for mod_settings in (
         mod_fac.ModSettings(
@@ -37,7 +37,7 @@ def create_cylinder(radius: float, height: float, lod: int, name: str, location=
 
     caps_obj_bot.location[2] -= epsilon
 
-    caps_obj_top = obj_fac.create_object(name=name + "_Caps_Top", auto_smooth=True, vertices=((0, 0, 0),), used_as_boolean=True)
+    caps_obj_top = obj_fac.create_mesh_object(name=name + "_Caps_Top", auto_smooth=True, vertices=((0, 0, 0),), used_as_boolean=True)
 
     for mod_settings in (
         mod_fac.ModSettings(
@@ -73,7 +73,7 @@ def create_cylinder(radius: float, height: float, lod: int, name: str, location=
     ):
         mod_fac.add_modifier(caps_obj_top, mod_settings)
 
-    cyl_obj = obj_fac.create_object(name=name, auto_smooth=True, vertices=((0, 0, 0),), used_as_boolean=used_as_boolean)
+    cyl_obj = obj_fac.create_mesh_object(name=name, auto_smooth=True, vertices=((0, 0, 0),), used_as_boolean=used_as_boolean)
 
     caps_obj_top.parent = cyl_obj
     caps_obj_bot.parent = cyl_obj
